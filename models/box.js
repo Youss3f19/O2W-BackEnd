@@ -11,7 +11,7 @@ const BoxSchema = new mongoose.Schema(
             type: Number,
             required: true
         },
-        productImage:{
+        boxImage:{
             type: String,
         },
         rarityProbabilities: [

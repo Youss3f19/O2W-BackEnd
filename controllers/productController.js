@@ -5,44 +5,42 @@ const Rarity = require('../models/rarity'); // Require the Rarity model
 // Create a new product
 exports.createProduct = async (req, res) => {
     try {
-      const { name, description, price, categories, stock, rarity } = req.body;
-      console.log('Received categories:', categories);  // Check how the categories are being received
-      
-      // Ensure categories are passed as an array of strings (ObjectId format)
-      const categoryIds = Array.isArray(categories) ? categories : JSON.parse(categories);
-      const productImage = req.file ? req.file.path : null;  
-        console.log(productImage);
-        
-      // Validate categories (check if all category IDs are valid)
-      if (categoryIds && categoryIds.length > 0) {
-        const validCategories = await Category.find({ _id: { $in: categoryIds } });
-        if (validCategories.length !== categoryIds.length) {
-          return res.status(400).json({ message: 'Some categories do not exist' });
+        const { name, description, price, categories, stock, rarity } = req.body;
+
+        // Ensure categories are passed as an array of strings (ObjectId format)
+        const categoryIds = Array.isArray(categories) ? categories : JSON.parse(categories);
+        const productImage = req.file ? req.file.path : null;
+
+        // Validate categories (check if all category IDs are valid)
+        if (categoryIds && categoryIds.length > 0) {
+            const validCategories = await Category.find({ _id: { $in: categoryIds } });
+            if (validCategories.length !== categoryIds.length) {
+                return res.status(400).json({ message: 'Some categories do not exist' });
+            }
         }
-      }
-  
-      // Validate rarity
-      if (!rarity) {
-        return res.status(400).json({ message: 'Rarity is required' });
-      }
-  
-      const validRarity = await Rarity.findById(rarity);
-      if (!validRarity) {
-        return res.status(400).json({ message: 'Rarity does not exist' });
-      }
-  
-      const product = new Product({ name, description, price, productImage ,categories: categoryIds, stock, rarity });
-      await product.save();
-  
-      res.status(201).json({
-        message: 'Product created successfully',
-        data: product,
-      });
+
+        // Validate rarity
+        if (!rarity) {
+            return res.status(400).json({ message: 'Rarity is required' });
+        }
+
+        const validRarity = await Rarity.findById(rarity);
+        if (!validRarity) {
+            return res.status(400).json({ message: 'Rarity does not exist' });
+        }
+
+        const product = new Product({ name, description, price, productImage, categories: categoryIds, stock, rarity });
+        await product.save();
+
+        res.status(201).json({
+            message: 'Product created successfully',
+            data: product,
+        });
     } catch (error) {
-      res.status(500).json({ message: 'Error creating product', error: error.message });
+        res.status(500).json({ message: 'Error creating product', error: error.message });
     }
-  };
-  
+};
+
 
 
 // Get all products
@@ -70,43 +68,36 @@ exports.getProductById = async (req, res) => {
 
 // Update a product
 exports.updateProduct = async (req, res) => {
+    const { id } = req.params;
+    let updateData = { ...req.body };
+
+ 
+
+    if (req.file) {
+        updateData.productImage = req.file.path;
+    }
+
     try {
-        const { name, description, price, categories, stock, rarity } = req.body;
-
-        // Validate categories
-        if (categories && categories.length > 0) {
-            const validCategories = await Category.find({ _id: { $in: categories } });
-            if (validCategories.length !== categories.length) {
-                return res.status(400).json({ message: 'Some categories do not exist' });
-            }
+        if (typeof updateData.categories === 'string') {
+            updateData.categories = JSON.parse(updateData.categories);
         }
-
-        // Validate rarity if provided
-        if (rarity) {
-            const validRarity = await Rarity.findById(rarity);
-            if (!validRarity) {
-                return res.status(400).json({ message: 'Rarity does not exist' });
-            }
-        }
-
-        const product = await Product.findByIdAndUpdate(
-            req.params.id,
-            { name, description, price, categories, stock, rarity }, // Include rarity for update
-            { new: true, runValidators: true }
-        );
-
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
-        }
-
-        res.status(200).json({
-            message: 'Product updated successfully',
-            data: product,
-        });
     } catch (error) {
-        res.status(500).json({ message: 'Error updating product', error: error.message });
+        return res.status(400).json({ error: 'Invalid format for categories' });
+    }
+
+    try {
+        const updatedProduct = await Product.findByIdAndUpdate(id, updateData, { new: true });
+        if (!updatedProduct) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        return res.status(200).json(updatedProduct);
+    } catch (error) {
+        return res.status(500).json({ error: 'Error updating product: ' + error.message });
     }
 };
+
+
+
 
 // Delete a product
 exports.deleteProduct = async (req, res) => {

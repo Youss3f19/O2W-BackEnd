@@ -21,7 +21,7 @@ router.post('/purchaseBox/:boxId', auth ,boxController.purchaseBox);
 router.put('/updateBox/:id', upload.single('file'), boxController.updateBox);
 
 
-router.delete('/deleteBox/:id',   auth , authorize(["admin"]),boxController.deleteBox);
+router.delete('/deleteBox/:id',boxController.deleteBox);
 
 
 module.exports = router;
