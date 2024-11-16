@@ -7,17 +7,13 @@ const CommandSchema = new mongoose.Schema(
             ref: 'User',  
             required: true
         },
-        boxes: [
+        products: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'Box',  
+                ref: 'Product',  
                 required: false
             }
         ],
-        totalAmount: {
-            type: Number,
-            required: true  
-        },
         status: {
             type: String,
             enum: ['Pending', 'Completed', 'Cancelled'],  

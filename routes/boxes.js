@@ -11,6 +11,7 @@ const { upload } = require("../middleware/multerMiddleware");
 router.get('/getBoxes',  boxController.getAllBoxes);  
 router.get('/boxes/:boxId/open', auth, boxController.openBox);
 router.get('/getBoxById/:boxId',  boxController.getBoxById);
+router.get('/purchaseLogs', boxController.getAllPurchaseLogs);
 
 
 

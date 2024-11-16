@@ -285,7 +285,61 @@ function updateUserInventory(user, userBox, generatedProducts) {
             user.inventory.push({ product: product._id, quantity: 1 });
         }
     });
+    
 }
+
+
+
+
+exports.getAllPurchaseLogs = async (req, res) => {
+    try {
+        // Fetch all users and populate their purchased boxes
+        const users = await User.find()
+            .populate({
+                path: 'boxes.box',
+                model: 'Box', // Reference to the Box model
+                select: 'name price rarityProbabilities categories', // Fields to include
+                populate: [
+                    { path: 'rarityProbabilities.rarity', select: 'name order' }, // Populate rarities
+                    { path: 'categories', select: 'name' } // Populate categories
+                ]
+            })
+            .select('fullname email boxes'); // Fetch user details and their boxes
+
+        // Map the data into a clean format
+        const purchaseLogs = users.map(user => ({
+            user: {
+                id: user._id,
+                name: user.fullname,
+                email: user.email,
+            },
+            purchases: user.boxes.map(boxEntry => ({
+                boxId: boxEntry.box ? boxEntry.box._id : null,
+                boxName: boxEntry.box ? boxEntry.box.name : null,
+                price: boxEntry.box ? boxEntry.box.price : null,
+                rarityProbabilities: boxEntry.box
+                    ? boxEntry.box.rarityProbabilities.map(r => ({
+                          rarityName: r.rarity.name,
+                          probability: r.probability,
+                      }))
+                    : [],
+                categories: boxEntry.box
+                    ? boxEntry.box.categories.map(c => c.name)
+                    : [],
+                opened: boxEntry.opened,
+            })),
+        }));
+
+        return res.status(200).json(purchaseLogs);
+    } catch (error) {
+        console.error('Error fetching purchase logs:', error);
+        return res.status(500).json({
+            message: 'Failed to fetch purchase logs',
+            error: error.message,
+        });
+    }
+};
+
 
 
 
