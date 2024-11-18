@@ -41,11 +41,15 @@ exports.login = (req, res) => {
                 let payload = {
                     _id: user._id,
                     email: user.email,
-                    fullname: user.name + ' ' + user.lastname,
-                    role: user.role
+                    name: user.name ,
+                    lastname : user.lastname,
+                    role: user.role,
+                    solde : user.solde,
+                    inventory: user.inventory,
+                    boxes: user.boxes
                 };
                 let token = jwt.sign(payload, '123456789');
-                res.status(200).send({ mytoken: token });
+                res.status(200).send({ mytoken: token , user : user });
             });
         })
         .catch((err) => {
@@ -74,6 +78,8 @@ exports.getUserById = (req, res) => {
         });
 };
 
+
+
 exports.getUserByEmail = (req, res) => {
     let mail = req.params.email;
     User.findOne({ email: mail })
@@ -86,13 +92,12 @@ exports.getUserByEmail = (req, res) => {
 };
 
 exports.verifyToken = (req, res) => {
-    const token = req.body.token;
-    
+    const token = req.body.token;    
     if (token) {
         const decode = jwt.verify(token, '123456789');
         res.status(200).json({
             login: true,
-            data: decode,
+            user: decode,
             isAdmin: decode.role === 'admin'
         });
     } else {
@@ -102,6 +107,17 @@ exports.verifyToken = (req, res) => {
         });
     }
 }
+
+exports.getUserByToken = (req, res) => {  
+    let id = req.user._id;
+    User.findOne({ _id: id })
+        .then((user) => {
+            res.status(200).send(user);
+        })
+        .catch((err) => {
+            res.status(400).send(err);
+        });
+  };
 
 exports.rechargeAccount = async (req, res) => {
     try {

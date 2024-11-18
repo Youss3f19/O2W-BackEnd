@@ -297,16 +297,15 @@ exports.getAllPurchaseLogs = async (req, res) => {
         const users = await User.find()
             .populate({
                 path: 'boxes.box',
-                model: 'Box', // Reference to the Box model
-                select: 'name price rarityProbabilities categories', // Fields to include
+                model: 'Box',
+                select: 'name price rarityProbabilities categories', 
                 populate: [
-                    { path: 'rarityProbabilities.rarity', select: 'name order' }, // Populate rarities
-                    { path: 'categories', select: 'name' } // Populate categories
+                    { path: 'rarityProbabilities.rarity', select: 'name order' }, 
+                    { path: 'categories', select: 'name' } 
                 ]
             })
-            .select('fullname email boxes'); // Fetch user details and their boxes
+            .select('fullname email boxes');
 
-        // Map the data into a clean format
         const purchaseLogs = users.map(user => ({
             user: {
                 id: user._id,

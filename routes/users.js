@@ -6,6 +6,8 @@ const auth = require('../middleware/auth');
 router.post('/signup',userController.signup);
 router.post('/login', userController.login);
 router.post('/verifyToken', userController.verifyToken);
+router.post('/userbytoken', auth, userController.getUserByToken);
+
 
 router.get('/all', userController.getAllUsers);
 router.get('/userbyid/:id', userController.getUserById);

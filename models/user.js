@@ -44,7 +44,7 @@ const UserSchema = new mongoose.Schema(
             {
                 box: { type: mongoose.Schema.Types.ObjectId, ref: 'Box' },
                 opened: { type: Boolean, default: false },
-                products: [  // Add a products array to track what was in this box
+                products: [  
                     {
                         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
                         quantity: { type: Number, default: 1 }
