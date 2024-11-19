@@ -119,6 +119,42 @@ exports.getUserByToken = (req, res) => {
         });
   };
 
+// Function to reset the password using the reset token
+exports.resetPassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id; // Extracted from the token
+
+    try {
+        const user = await User.findOne({ _id: userId });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User does not exist!' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        console.log('Password validation result:', isPasswordValid);
+
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: 'Current password is incorrect!' });
+        }
+
+        if (currentPassword === newPassword) {
+            return res.status(400).json({ message: 'New password cannot be the same as the current password!' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        console.log('New hashed password:', user.password);
+
+        await user.save();
+
+        return res.status(200).json({ message: 'Password updated successfully' });
+    } catch (err) {
+        console.error('Error while resetting password:', err);
+        return res.status(500).json({ message: 'Error while resetting password.', error: err.message });
+    }
+};
+
 exports.rechargeAccount = async (req, res) => {
     try {
         const userId = req.user._id;  // Récupérer id de l'utilisateur à partir du token

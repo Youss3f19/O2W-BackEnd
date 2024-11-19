@@ -23,6 +23,8 @@ exports.getAllBoxes = async (req, res) => {
 exports.purchaseBox = async (req, res) => {
     const { boxId } = req.params;
     const userId = req.user._id;
+    console.log(userId);
+    
 
     try {
         // Find the box and user
