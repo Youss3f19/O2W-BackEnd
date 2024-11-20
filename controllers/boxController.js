@@ -59,6 +59,68 @@ exports.purchaseBox = async (req, res) => {
     }
 };
 
+exports.purchaseBoxes = async (req, res) => {
+    const { panier } = req.body; // Tableau d'objets contenant `boxId` et `quantity`
+    const userId = req.user._id;
+    console.log(panier);
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        let totalCost = 0;
+        const purchasedBoxes = [];
+
+        // Vérifier chaque boîte et calculer le coût total
+        for (const item of panier) {
+            const {quantity } = item;
+            const boxId = item.box._id;
+
+            // Vérifiez si la boîte existe
+            const box = await Box.findById(boxId);
+            if (!box) {
+                return res.status(404).json({ message: `Box with ID ${boxId} not found` });
+            }
+
+            const costForItem = box.price * quantity;
+
+            // Vérifiez si l'utilisateur a un solde suffisant
+            if (user.solde < costForItem) {
+                return res.status(400).json({
+                    message: `Insufficient balance to purchase box with ID ${boxId} in quantity ${quantity}`,
+                    purchasedBoxes,
+                    totalCost,
+                });
+            }
+
+            // Déduire le coût du solde utilisateur
+            user.solde -= costForItem;
+
+            // Ajouter les boîtes au compte utilisateur
+            for (let i = 0; i < quantity; i++) {
+                user.boxes.push({ box: boxId, opened: false });
+            }
+
+            purchasedBoxes.push({ boxId, quantity });
+            totalCost += costForItem;
+        }
+
+        // Sauvegarder les modifications de l'utilisateur
+        await user.save();
+
+        // Réponse en cas de succès
+        return res.status(200).json({
+            message: 'Boxes purchased successfully',
+            purchasedBoxes,
+            totalCost,
+            remainingBalance: user.solde,
+        });
+    } catch (error) {
+        console.error('Error purchasing boxes:', error);
+        return res.status(500).json({ message: 'Error purchasing boxes', error: error.message });
+    }
+};
 
 
 

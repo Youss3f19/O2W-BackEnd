@@ -68,15 +68,24 @@ exports.getAllUsers = (req, res) => {
 };
 
 exports.getUserById = (req, res) => {
-    let id = req.params.id;
+    const id = req.params.id;
+
     User.findOne({ _id: id })
+        .populate('boxes.box inventory.product' )
         .then((user) => {
+            if (!user) {
+                return res.status(404).send({ message: 'User not found' });
+            }
             res.status(200).send(user);
         })
         .catch((err) => {
-            res.status(400).send(err);
+            console.error(err);
+            res.status(500).send({ error: 'An error occurred while fetching the user' });
         });
 };
+
+
+
 
 
 
