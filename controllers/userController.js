@@ -141,7 +141,6 @@ exports.resetPassword = async (req, res) => {
         }
 
         const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-        console.log('Password validation result:', isPasswordValid);
 
         if (!isPasswordValid) {
             return res.status(400).json({ message: 'Current password is incorrect!' });
@@ -153,7 +152,6 @@ exports.resetPassword = async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(newPassword, salt);
-        console.log('New hashed password:', user.password);
 
         await user.save();
 

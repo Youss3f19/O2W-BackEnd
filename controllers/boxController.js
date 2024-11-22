@@ -23,7 +23,6 @@ exports.getAllBoxes = async (req, res) => {
 exports.purchaseBox = async (req, res) => {
     const { boxId } = req.params;
     const userId = req.user._id;
-    console.log(userId);
     
 
     try {
@@ -62,7 +61,6 @@ exports.purchaseBox = async (req, res) => {
 exports.purchaseBoxes = async (req, res) => {
     const { panier } = req.body; // Tableau d'objets contenant `boxId` et `quantity`
     const userId = req.user._id;
-    console.log(panier);
     try {
         const user = await User.findById(userId);
         if (!user) {
@@ -285,8 +283,8 @@ function findUserBox(user, boxId) {
 // Helper function to retrieve the box with rarity probabilities
 async function findBoxWithRarityAndCategory(boxId) {
     return await Box.findById(boxId)
-    .populate('rarityProbabilities.rarity')
-    .populate('categories');; 
+    .populate('rarityProbabilities.rarity')  
+    .populate('categories')
 }
 
 // Helper function to generate products based on box rarity and category
@@ -316,8 +314,10 @@ async function generateProductsForBox(box) {
                 query.categories = { $in: boxCategoryIds }; // Only include products with matching categories
             }
 
-            // Find products based on the constructed query
-            const products = await Product.find(query);
+            // Find products based on the constructed query and populate rarity and categories
+            const products = await Product.find(query)
+                .populate('rarity')   // Populate the rarity field
+                .populate('categories'); // Populate the categories field
 
             if (products.length > 0) {
                 const randomProduct = products[Math.floor(Math.random() * products.length)];
@@ -331,6 +331,7 @@ async function generateProductsForBox(box) {
     }
     return generatedProducts;
 }
+
 
 
 // Helper function to update user inventory and box content with generated products

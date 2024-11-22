@@ -28,7 +28,6 @@ exports.redeemGiftCard = async (req, res) => {
   try {
     const userId = req.user._id; 
     const { code } = req.body;
-    console.log(userId);
     
 
     // Find the gift card by its code
