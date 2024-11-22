@@ -18,6 +18,31 @@ exports.getAllBoxes = async (req, res) => {
     }
 };
 
+exports.getProductsByBox = async (req, res) => {
+    try {
+      const { boxId } = req.params;
+  
+      // Find the box by ID
+      const box = await Box.findById(boxId).populate('categories rarityProbabilities.rarity');
+  
+      if (!box) {
+        return res.status(404).json({ message: 'Box not found' });
+      }
+  
+      // Fetch products that match the box's categories
+      const products = await Product.find({
+        categories: { $in: box.categories }
+      }).populate('rarity');
+  
+      // Sort products by rarity in descending order (higher order value first)
+      const sortedProducts = products.sort((a, b) => b.rarity.order - a.rarity.order);
+  
+      res.status(200).json({ products: sortedProducts });
+    } catch (error) {
+      console.error('Error fetching products by box:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  };
 
 
 exports.purchaseBox = async (req, res) => {
@@ -57,6 +82,8 @@ exports.purchaseBox = async (req, res) => {
         return res.status(500).json({ message: 'Error purchasing box', error: error.message });
     }
 };
+
+
 
 exports.purchaseBoxes = async (req, res) => {
     const { panier } = req.body; // Tableau d'objets contenant `boxId` et `quantity`

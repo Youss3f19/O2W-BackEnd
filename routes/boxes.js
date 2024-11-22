@@ -11,12 +11,12 @@ const { upload } = require("../middleware/multerMiddleware");
 router.get('/getBoxes',  boxController.getAllBoxes);  
 router.get('/boxes/:boxId/open', auth, boxController.openBox);
 router.get('/getBoxById/:boxId',  boxController.getBoxById);
-router.post('/purchaseBoxes', auth, boxController.purchaseBoxes);
+router.get('/getProductsByBox/:boxId', boxController.getProductsByBox);
 router.get('/purchaseLogs', boxController.getAllPurchaseLogs);
 
 
 
-
+router.post('/purchaseBoxes', auth, boxController.purchaseBoxes);
 router.post('/addBox', upload.single('file'), boxController.addBox);
 router.post('/purchaseBox/:boxId', auth ,boxController.purchaseBox);
 
