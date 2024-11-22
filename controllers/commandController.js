@@ -1,63 +1,70 @@
 const Command = require('../models/Command');
 const User = require('../models/user');
 const Product = require('../models/product');
-
 exports.createCommand = async (req, res) => {
     try {
-        const { userId, products } = req.body;
+        
+        const userId = req.user?._id; 
+        const { products } = req.body;
 
-        // Vérifier que l'utilisateur existe
-        const user = await User.findById(userId).populate('inventory.product');
-        if (!user) {
-            return res.status(404).json({ message: 'Utilisateur introuvable.' });
+        // Validate inputs
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is missing." });
+        }
+        if (!Array.isArray(products) || products.length === 0) {
+            return res.status(400).json({ message: "Products array is required." });
         }
 
-        // Vérifier et retirer les quantités des produits
+
+        // Check that user exists
+        const user = await User.findById(userId).populate('inventory.product');
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Validate and update inventory
         const inventoryUpdates = [];
         for (const product of products) {
             const { productId, quantity } = product;
 
-            // Trouver le produit dans l'inventaire
-            const inventoryItem = user.inventory.find(item => 
-                item.product._id.toString() === productId
+            const inventoryItem = user.inventory.find(
+                (item) => item.product._id.toString() === productId
             );
 
             if (!inventoryItem || inventoryItem.quantity < quantity) {
                 return res.status(400).json({
-                    message: `Quantité insuffisante pour le produit: ${inventoryItem ? inventoryItem.product.name : productId}.`
+                    message: `Insufficient quantity for product: ${
+                        inventoryItem ? inventoryItem.product.name : productId
+                    }.`,
                 });
             }
 
-            // Mettre à jour l'inventaire
             inventoryItem.quantity -= quantity;
             if (inventoryItem.quantity === 0) {
                 inventoryUpdates.push(productId);
             }
         }
 
-        // Supprimer les produits avec quantité zéro
-        user.inventory = user.inventory.filter(item => 
-            !inventoryUpdates.includes(item.product._id.toString())
+        user.inventory = user.inventory.filter(
+            (item) => !inventoryUpdates.includes(item.product._id.toString())
         );
 
-        // Enregistrer les changements dans l'inventaire
         await user.save();
 
-        // Créer la commande
         const command = new Command({
             user: userId,
-            products: products.map(p => p.productId),
-            status: 'Pending'
+            products: products.map((p) => p.productId),
+            status: "Pending",
         });
 
         await command.save();
-
-        res.status(201).json({ message: 'Commande créée avec succès.', command });
+        res.status(201).json({ message: "Command created successfully.", command });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Erreur lors de la création de la commande.' });
+        res.status(500).json({ message: "Error creating command." });
     }
 };
+
 
 exports.updateCommandStatus = async (req, res) => {
     try {
