@@ -197,6 +197,7 @@ exports.deleteBox = async (req, res) => {
 exports.getBoxById = async (req, res) => {
     try {
         const box = await Box.findById(req.params.boxId);
+        
         if (!box) {
             return res.status(404).json({ message: 'Box not found' });
         }
