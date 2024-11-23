@@ -37,7 +37,7 @@ exports.getProductsByBox = async (req, res) => {
       // Sort products by rarity in descending order (higher order value first)
       const sortedProducts = products.sort((a, b) => b.rarity.order - a.rarity.order);
   
-      res.status(200).json({ products: sortedProducts });
+      res.status(200).json( sortedProducts );
     } catch (error) {
       console.error('Error fetching products by box:', error);
       res.status(500).json({ message: 'Server error', error: error.message });
