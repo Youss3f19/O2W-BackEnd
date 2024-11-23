@@ -1,69 +1,88 @@
 const Command = require('../models/Command');
 const User = require('../models/user');
-const Product = require('../models/product');
+const Product = require('../models/product'); 
+
+
+
+
+
+exports.getAllCommands = async (req, res) => {
+    try {
+        // Récupérer toutes les commandes
+        const commands = await Command.find()
+            .populate('products.product' , 'name price stock productImage')
+            .populate('user' , 'name lastname email')
+               
+
+        res.status(200).json(commands);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Erreur lors de la récupération des commandes', error });
+    }
+};
+
+
 exports.createCommand = async (req, res) => {
     try {
+        const { products } = req.body; // Produits de la commande (array: { product, quantity })
         
-        const userId = req.user?._id; 
-        const { products } = req.body;
-
-        // Validate inputs
-        if (!userId) {
-            return res.status(400).json({ message: "User ID is missing." });
-        }
-        if (!Array.isArray(products) || products.length === 0) {
-            return res.status(400).json({ message: "Products array is required." });
-        }
-
-
-        // Check that user exists
-        const user = await User.findById(userId).populate('inventory.product');
+        // Vérifier si l'utilisateur existe
+        const user = await User.findById(req.user._id);
         if (!user) {
-            return res.status(404).json({ message: "User not found." });
+            return res.status(404).json({ message: 'Utilisateur non trouvé' });
         }
 
-        // Validate and update inventory
-        const inventoryUpdates = [];
-        for (const product of products) {
-            const { productId, quantity } = product;
-
+        // Vérifier si les produits sont dans l'inventaire de l'utilisateur
+        for (const item of products) {
             const inventoryItem = user.inventory.find(
-                (item) => item.product._id.toString() === productId
+                (inv) => inv.product.toString() === item.product
             );
 
-            if (!inventoryItem || inventoryItem.quantity < quantity) {
-                return res.status(400).json({
-                    message: `Insufficient quantity for product: ${
-                        inventoryItem ? inventoryItem.product.name : productId
-                    }.`,
+            if (!inventoryItem) {
+                return res.status(404).json({
+                    message: `Le produit avec l'ID ${item.product} n'est pas présent dans votre inventaire.`,
                 });
             }
 
-            inventoryItem.quantity -= quantity;
-            if (inventoryItem.quantity === 0) {
-                inventoryUpdates.push(productId);
+            if (inventoryItem.quantity < item.quantity) {
+                return res.status(400).json({
+                    message: `Quantité insuffisante dans l'inventaire pour le produit ${item.product}. Disponible: ${inventoryItem.quantity}, demandé: ${item.quantity}`,
+                });
             }
         }
 
-        user.inventory = user.inventory.filter(
-            (item) => !inventoryUpdates.includes(item.product._id.toString())
-        );
+        // Réduire les quantités dans l'inventaire
+        for (const item of products) {
+            const inventoryItem = user.inventory.find(
+                (inv) => inv.product.toString() === item.product
+            );
 
+            if (inventoryItem) {
+                inventoryItem.quantity -= item.quantity;
+            }
+        }
+
+        // Supprimer les produits avec une quantité de 0 (optionnel)
+        user.inventory = user.inventory.filter((inv) => inv.quantity > 0);
+
+        // Sauvegarder l'utilisateur avec l'inventaire mis à jour
         await user.save();
 
+        // Créer la commande
         const command = new Command({
-            user: userId,
-            products: products.map((p) => p.productId),
-            status: "Pending",
+            user: req.user._id,
+            products,
         });
 
         await command.save();
-        res.status(201).json({ message: "Command created successfully.", command });
+
+        res.status(201).json({ message: 'Commande créée avec succès', command });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Error creating command." });
+        res.status(500).json({ message: 'Erreur lors de la création de la commande', error });
     }
 };
+
 
 
 exports.updateCommandStatus = async (req, res) => {
@@ -93,39 +112,27 @@ exports.updateCommandStatus = async (req, res) => {
             return res.status(404).json({ message: 'Utilisateur introuvable.' });
         }
 
-        // Gestion des statuts
-        if (status === 'Completed') {
-            // Si la commande est acceptée (Completed), retirer les produits de l'inventaire
-            command.products.forEach(productId => {
-                const inventoryItem = user.inventory.find(item => 
-                    item.product.toString() === productId.toString()
+        if (status === 'Cancelled') {
+            console.log(command.products);
+        
+            // Réinjecter les produits dans l'inventaire
+            command.products.forEach((p) => {
+                const existingInventoryItem = user.inventory.find((item) => 
+                    item.product.toString() === p.product.toString()
                 );
-
-                if (inventoryItem) {
-                    inventoryItem.quantity -= 1;
-
-                    // Si la quantité devient 0, retirer le produit
-                    if (inventoryItem.quantity <= 0) {
-                        user.inventory = user.inventory.filter(item => 
-                            item.product.toString() !== productId.toString()
-                        );
-                    }
-                }
-            });
-        } else if (status === 'Cancelled') {
-            // Si la commande est annulée (Cancelled), réinjecter les produits dans l'inventaire
-            command.products.forEach(productId => {
-                const existingInventoryItem = user.inventory.find(item => 
-                    item.product.toString() === productId.toString()
-                );
-
+        
                 if (existingInventoryItem) {
-                    existingInventoryItem.quantity += 1; // Augmenter la quantité
+                    // Si le produit existe déjà dans l'inventaire, ajouter la quantité
+                    existingInventoryItem.quantity += p.quantity;
                 } else {
-                    user.inventory.push({ product: productId, quantity: 1 });
+                    // Sinon, ajouter un nouvel élément dans l'inventaire
+                    user.inventory.push({ product: p.product, quantity: p.quantity });
                 }
             });
+        
+            console.log("Inventaire mis à jour :", user.inventory);
         }
+        
 
         // Mettre à jour l'utilisateur et la commande
         await user.save();

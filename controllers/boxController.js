@@ -37,7 +37,7 @@ exports.getProductsByBox = async (req, res) => {
       // Sort products by rarity in descending order (higher order value first)
       const sortedProducts = products.sort((a, b) => b.rarity.order - a.rarity.order);
   
-      res.status(200).json({ products: sortedProducts });
+      res.status(200).json(sortedProducts);
     } catch (error) {
       console.error('Error fetching products by box:', error);
       res.status(500).json({ message: 'Server error', error: error.message });
@@ -221,7 +221,9 @@ exports.deleteBox = async (req, res) => {
 // Get a box by ID
 exports.getBoxById = async (req, res) => {
     try {
-        const box = await Box.findById(req.params.boxId);
+        const box = await Box.findById(req.params.boxId)
+        .populate('rarityProbabilities.rarity', 'name order')
+        .populate('categories', 'name');
         
         if (!box) {
             return res.status(404).json({ message: 'Box not found' });
