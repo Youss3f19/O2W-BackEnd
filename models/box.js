@@ -7,7 +7,7 @@ const BoxSchema = new mongoose.Schema(
             required: true,
             unique: true,
         },
-        price: {
+        price: {    
             type: Number,
             required: true
         },

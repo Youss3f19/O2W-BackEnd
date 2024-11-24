@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 const giftCardController = require('../controllers/giftCardController');
 const auth = require('../middleware/auth');
+const authorize = require("../middleware/authorize");
 
 
-router.post('/', giftCardController.createGiftCard);
+
 router.get('/', giftCardController.getAllGiftCards);
 router.post('/redeem',auth, giftCardController.redeemGiftCard);
-router.delete('/:id', giftCardController.deleteGiftCard);
-router.post('/generate', giftCardController.generateGiftCards);
+router.post('/generate',auth, authorize("admin") ,giftCardController.generateGiftCards);
 
 
 module.exports = router;

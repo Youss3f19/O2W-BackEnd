@@ -20,9 +20,7 @@ const giftCardSchema = new mongoose.Schema({
     ref: 'User',
     default: null,
   },
-  expirationDate: {
-    type: Date,
-  },
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('GiftCard', giftCardSchema);

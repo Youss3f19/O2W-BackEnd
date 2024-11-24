@@ -1,17 +1,7 @@
 const GiftCard = require('../models/giftCard');
 const User = require('../models/user');  
 const { v4: uuidv4 } = require('uuid');
-// Create a gift card
-exports.createGiftCard = async (req, res) => {
-  try {
-    const { code, value, expirationDate } = req.body;
-    const giftCard = new GiftCard({ code, value, expirationDate });
-    await giftCard.save();
-    res.status(201).send(giftCard);
-  } catch (err) {
-    res.status(400).send(err);
-  }
-};
+
 
 // Get all gift cards
 exports.getAllGiftCards = async (req, res) => {
@@ -66,21 +56,12 @@ exports.redeemGiftCard = async (req, res) => {
 };
 
 
-// Delete a gift card
-exports.deleteGiftCard = async (req, res) => {
-  try {
-    await GiftCard.findByIdAndDelete(req.params.id);
-    res.send({ message: 'Gift card deleted' });
-  } catch (err) {
-    res.status(500).send(err);
-  }
-};
 
 
 exports.generateGiftCards = async (req, res) => {
   try {
 
-    const { numberOfCards, value, expirationDate } = req.body;
+    const { numberOfCards, value } = req.body;
 
     if (!numberOfCards || numberOfCards <= 0) {
       return res.status(400).send({ message: 'Invalid number of cards specified.' });
@@ -91,7 +72,6 @@ exports.generateGiftCards = async (req, res) => {
       giftCards.push({
         code: uuidv4(),
         value,
-        expirationDate,
       });
     }
 

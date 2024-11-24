@@ -113,3 +113,4 @@ exports.deleteProduct = async (req, res) => {
         res.status(500).json({ message: 'Error deleting product', error: error.message });
     }
 };
+

@@ -6,6 +6,7 @@ const boxApi = require('./routes/boxes');
 const productApi = require('./routes/products');
 const giftCardApi = require('./routes/giftCard');
 const commandApi = require('./routes/command');
+const commentApi = require('./routes/comment');
 
 
 
@@ -27,6 +28,8 @@ app.use('/category' , categoryApi);
 app.use('/product' , productApi);
 app.use('/command', commandApi);
 app.use('/giftCard', giftCardApi);
+app.use('/comment', commentApi);
+
 app.use('/uploads', express.static('uploads'));
 
 
